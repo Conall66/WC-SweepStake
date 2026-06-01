@@ -26,6 +26,53 @@ npm run preview    # preview the production build, incl. the service worker
 Open the dev URL on your phone (same network) or use “Add to Home Screen” from
 the built/preview version to install it.
 
+## Hosting or joining a group
+
+A “group” is just a **sweep**, and a sweep is identified by a short slug in the
+URL hash — e.g. `…/#work`, `…/#family`, `…/#the-lads`. There’s no separate
+“create” vs “join” step under the hood: whoever lands on a slug first effectively
+hosts it, and everyone who opens the same slug shares the same lobby.
+
+The live app is at **https://conall66.github.io/WC-SweepStake/** (or your own dev
+/ preview URL).
+
+### Host a group
+
+1. Open the app. On the **start screen**, type a group name (e.g. `Work`,
+   `Family`, `The Lads`). It’s slugified live — you’ll see the resulting handle,
+   like `#the-lads`, under the box.
+2. Tap **ENTER SWEEP →**. You’re now in that sweep’s lobby; the slug is in the
+   URL hash.
+3. Add yourself first (see *Join a group* below) so the lobby isn’t empty.
+4. **Share the full URL** — including the `#slug` — with everyone you want in.
+   Copy it straight from the address bar, or just tell people the exact group
+   name to type on the start screen (the same name always produces the same
+   slug, so `The Lads` and `the lads` both land on `#the-lads`).
+
+There’s nothing to register: the slug *is* the group. Pick something memorable
+but not guessable if you’d rather randoms didn’t wander in.
+
+### Join a group
+
+1. Open the link the host shared, **or** open the app and type the exact group
+   name the host gave you on the start screen, then **ENTER SWEEP →**.
+2. Go to the **Squad** tab (“Who’s playing”) and tap **＋ Add yourself**.
+3. Add a name, a one-line descriptor, and optionally a photo, then tap
+   **ADD ME · £5 →**. You’re in the lobby and counted toward the pot.
+4. Do this **before joining closes** (the deadline shown on the Home screen).
+   After that the lobby locks, the draw runs, and you reveal your teams on the
+   **Reveal** tab at your own pace.
+
+The £5-a-head pot is tracked for display only — settle it between players
+**outside the app**.
+
+> ⚠️ **Cross-device sharing needs the backend.** The current build persists each
+> sweep to `localStorage`, so a slug’s players only live on the device that
+> entered them — opening `#work` on a second phone starts an empty lobby. Sharing
+> a sweep across devices works once a `FirebaseRepository` is wired up (see
+> *What you need to supply*); the slug-based URLs above are already the sharing
+> mechanism it will use.
+
 ## How the draw works (and why it’s fair)
 
 1. **Rank** — teams are ordered by the FIFA World Ranking (1 = strongest).
