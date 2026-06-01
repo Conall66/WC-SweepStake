@@ -142,11 +142,17 @@ ledger guarantees coarse polling never duplicates or misses.
   Firebase Anonymous Auth (silent), show the lobby, let the person claim/add
   their name. Claiming calls the `claimPlayer` callable, which writes `authUid`
   onto an unclaimed player doc (prevents hijacking claimed seats).
-- **Push registration** — after a successful claim: (1) verify the app is
-  running installed (`display-mode: standalone`); on iOS, show an "Add to Home
-  Screen to get reminders" hint if in a Safari tab, since iOS web push requires
-  the installed app; (2) request notification permission; (3) obtain the FCM
-  token and append to `fcmTokens`.
+- **Push registration** — after a successful claim, run a **platform-aware**
+  flow:
+  - **iOS (Safari):** web push requires the app be added to the Home Screen.
+    If not running in `display-mode: standalone`, show an "Add to Home Screen
+    to get reminders" hint (manual Share → Add to Home Screen) and defer the
+    permission prompt until the app is opened standalone.
+  - **Android (Chrome) / desktop:** push works without install. Offer install
+    via the `beforeinstallprompt` event (one-tap "Install app") as a nicety,
+    but do **not** gate the permission prompt on it.
+  - Once eligible: request notification permission, obtain the FCM token, and
+    append it to `fcmTokens`.
 - **Push service worker** — switch `vite-plugin-pwa` to `injectManifest` so we
   own the SW, and add FCM background message / `push` + `notificationclick`
   handlers (tap opens the relevant screen: Fixtures for results, Reveal for
@@ -218,10 +224,26 @@ score-updated later by the `tick`.
 
 None outstanding at design time.
 
-## iOS Constraints (reference)
+## Platform Support (reference)
 
-- Web push for PWAs requires iOS 16.4+ **and** the app added to the Home Screen
-  (not a Safari tab). The client detects standalone mode and guides install
-  before prompting for permission.
-- Installation is via Safari → Share → Add to Home Screen (the manifest is
+The backend (Firestore, Cloud Functions, FCM) and notification rules are
+identical across platforms — FCM and web push are cross-platform standards.
+Only the client install/permission flow differs.
+
+**iOS (Safari 16.4+):**
+- Web push for PWAs requires the app added to the Home Screen (not a Safari
+  tab). The client detects standalone mode and guides install before prompting
+  for permission.
+- Installation is manual: Safari → Share → Add to Home Screen (the manifest is
   already configured for `display: standalone`).
+- Must use Safari to install; Chrome/Firefox on iOS cannot install PWAs.
+
+**Android (Chrome) and desktop browsers:**
+- Web push works without installing — in a normal browser tab — so the
+  permission prompt is offered directly and is not gated on install.
+- Install is offered via the `beforeinstallprompt` event (one-tap "Install
+  app") for the nicer standalone experience, but it is optional.
+
+**Testing note:** the platform-aware registration flow is verified on both an
+iOS device (installed) and Android Chrome (tab + installed) before release,
+since this is the one area that genuinely differs between platforms.
