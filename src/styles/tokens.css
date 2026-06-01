@@ -1,0 +1,20 @@
+:root {
+  --black: #0a0b0a;
+  --panel: #121413;
+  --panel-2: #191c1a;
+  --panel-3: #22251f;
+  --line: rgba(255, 255, 255, 0.07);
+  --line-2: rgba(255, 255, 255, 0.13);
+  --ink: #f3f5ef;
+  --muted: #868c83;
+  --muted-2: #5c615a;
+  --grass: #2fe08a;
+  --grass-dim: rgba(47, 224, 138, 0.14);
+  --gold: #d9b25b;
+  --danger: #d9785b;
+  --radius: 13px;
+
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-body: 'Hanken Grotesk', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}

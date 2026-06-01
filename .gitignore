@@ -1,0 +1,10 @@
+node_modules
+dist
+dist-ssr
+*.local
+.env
+.DS_Store
+
+# build output of the admin fetch script
+src/data/teams.json
+src/data/fixtures.json
