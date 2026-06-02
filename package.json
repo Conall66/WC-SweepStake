@@ -10,10 +10,14 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "fetch:tournament": "node scripts/fetch-tournament.mjs"
+    "fetch:tournament": "node scripts/fetch-tournament.mjs",
+    "emulators": "firebase emulators:start --only auth,firestore,functions",
+    "dev:firebase": "VITE_USE_FIREBASE=true VITE_USE_FIREBASE_EMULATOR=true vite",
+    "test:rules": "vitest run src/data/firebaseRepository.test.ts"
   },
   "dependencies": {
     "d3-geo": "^3.1.1",
+    "firebase": "^10.13.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "topojson-client": "^3.1.0",
