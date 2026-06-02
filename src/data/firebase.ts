@@ -41,10 +41,12 @@ export function firebaseAuth(): Auth {
 
 export function firebaseDb(): Firestore {
   const db = getFirestore(getApp());
-  connectEmulatorsOnce(firebaseAuth(), db, getFunctions(getApp()));
+  connectEmulatorsOnce(getAuth(getApp()), db, getFunctions(getApp()));
   return db;
 }
 
 export function firebaseFunctions(): Functions {
-  return getFunctions(getApp());
+  const fns = getFunctions(getApp());
+  connectEmulatorsOnce(getAuth(getApp()), getFirestore(getApp()), fns);
+  return fns;
 }
