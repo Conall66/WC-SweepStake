@@ -9,7 +9,6 @@ import type { Team } from '../domain/types';
 export function RevealScreen() {
   const { teams, players, assignments, currentPlayerId, revealTeams } = useApp();
 
-  const teamById = useMemo(() => new Map(teams.map((team) => [team.id, team])), [teams]);
   const playerById = useMemo(() => new Map(players.map((player) => [player.id, player])), [players]);
 
   const reveal = useReveal({
@@ -18,16 +17,6 @@ export function RevealScreen() {
     playerId: currentPlayerId,
     onReveal: revealTeams,
   });
-
-  // Everyone else's revealed picks, most recent first. Shown until you finish
-  // your own reveal, after which the full roster opens up.
-  const othersRevealed = useMemo(
-    () =>
-      assignments
-        .filter((a) => a.revealedAt !== null && a.playerId !== currentPlayerId)
-        .sort((a, b) => (b.revealedAt ?? 0) - (a.revealedAt ?? 0)),
-    [assignments, currentPlayerId],
-  );
 
   // Full roster (every player's complete squad, revealed or not). Built once
   // you've revealed all your own teams.
@@ -110,7 +99,7 @@ export function RevealScreen() {
         </button>
       )}
 
-      {reveal.complete ? (
+      {reveal.complete && (
         <div className="feed">
           <span className="eyebrow" style={{ color: 'var(--muted)' }}>
             Full roster · everyone&apos;s teams
@@ -132,29 +121,6 @@ export function RevealScreen() {
               ))}
             </div>
           ))}
-        </div>
-      ) : (
-        <div className="feed">
-          <span className="eyebrow" style={{ color: 'var(--muted)' }}>
-            Others&apos; teams · as they reveal
-          </span>
-          {othersRevealed.length === 0 && <p className="placeholder">No one else has revealed yet.</p>}
-          {othersRevealed.map((assignment) => {
-            const team = teamById.get(assignment.teamId);
-            const player = playerById.get(assignment.playerId);
-            if (!team) return null;
-            return (
-              <div className="row" key={`${assignment.playerId}-${assignment.teamId}`}>
-                <span className="fl">{flagEmoji(team.isoCode)}</span>
-                <span className="nm">
-                  {team.name} <em>· {player?.name ?? 'Player'}</em>
-                </span>
-                <span className={`bk${assignment.revealedAuto ? ' auto' : ''}`}>
-                  {assignment.revealedAuto ? 'auto' : `B${assignment.bucket}`}
-                </span>
-              </div>
-            );
-          })}
         </div>
       )}
     </>

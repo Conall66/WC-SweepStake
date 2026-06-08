@@ -15,6 +15,7 @@ import type { Assignment, Player, SweepConfig, Team } from '../domain/types';
 import { potPence } from '../domain/draw';
 import { createRepository } from '../data';
 import { LocalRepository } from '../data/localRepository';
+import { getActiveSeed } from '../data/activeSeed';
 import { resolveSeatPlayerId, seatStorageKey } from './seat';
 
 const SWEEP_ID = 'wc2026';
@@ -32,7 +33,12 @@ interface AppState {
   potPence: number;
   setCurrentPlayer: (id: string) => void;
   revealTeams: (playerId: string, teamIds: string[], auto?: boolean) => Promise<void>;
-  resetSweep?: () => void;
+  /** The seed the draw is computed from (default, or a dev override). */
+  activeSeed: string;
+  /** DEV only — present only under `npm run dev`, never on the deployed site. */
+  devReshuffle?: () => void;
+  devResetReveals?: () => void;
+  devRestoreDefault?: () => void;
 }
 
 const AppContext = createContext<AppState | null>(null);
@@ -45,6 +51,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [players, setPlayers] = useState<Player[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [currentPlayerId, setCurrentPlayerIdState] = useState<string | null>(null);
+  const [activeSeed, setActiveSeed] = useState<string>(() => getActiveSeed());
 
   const refresh = useCallback(async () => {
     const [nextPlayers, nextAssignments] = await Promise.all([
@@ -53,6 +60,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     ]);
     setPlayers(nextPlayers);
     setAssignments(nextAssignments);
+    setActiveSeed(getActiveSeed());
   }, [repository]);
 
   useEffect(() => {
@@ -89,13 +97,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [repository],
   );
 
-  const resetSweep = import.meta.env.DEV
-    ? () => {
-        if (!window.confirm('DEV: Reset all reveals?')) return;
-        (repository as LocalRepository).reset();
-        if (typeof localStorage !== 'undefined') localStorage.removeItem(SEAT_KEY);
-        setCurrentPlayerIdState(null);
-      }
+  // DEV-only owner controls. Each mutates localStorage then notifies, which
+  // triggers refresh() above — so assignments and the active-seed display update
+  // without a reload. Local to this device; to change the draw for everyone,
+  // bake the seed shown in dev mode into sweepData.ts and redeploy.
+  const devReshuffle = import.meta.env.DEV
+    ? () => (repository as LocalRepository).reshuffle()
+    : undefined;
+  const devResetReveals = import.meta.env.DEV
+    ? () => (repository as LocalRepository).reset()
+    : undefined;
+  const devRestoreDefault = import.meta.env.DEV
+    ? () => (repository as LocalRepository).restoreDefaultDraw()
     : undefined;
 
   const value = useMemo<AppState>(
@@ -111,9 +124,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
       potPence: config ? potPence(players.length, config.contributionPence) : 0,
       setCurrentPlayer,
       revealTeams,
-      resetSweep,
+      activeSeed,
+      devReshuffle,
+      devResetReveals,
+      devRestoreDefault,
     }),
-    [loading, config, teams, players, assignments, currentPlayerId, setCurrentPlayer, revealTeams, resetSweep],
+    [
+      loading,
+      config,
+      teams,
+      players,
+      assignments,
+      currentPlayerId,
+      activeSeed,
+      setCurrentPlayer,
+      revealTeams,
+      devReshuffle,
+      devResetReveals,
+      devRestoreDefault,
+    ],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

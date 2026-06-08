@@ -5,7 +5,8 @@
 import type { Assignment, Player, SweepConfig, Team } from '../domain/types';
 import type { SweepRepository } from './repository';
 import { SAMPLE_TEAMS } from './seedTeams';
-import { PLAYERS, BASE_ASSIGNMENTS } from './sweepData';
+import { PLAYERS, computeAssignments } from './sweepData';
+import { clearSeedOverride, generateSeed, getActiveSeed, setSeedOverride } from './activeSeed';
 
 const REVEALS_KEY = 'sweep:reveals:v1';
 
@@ -33,7 +34,28 @@ export class LocalRepository implements SweepRepository {
     this.listeners.forEach((l) => l());
   }
 
+  /** The seed the draw is currently computed from (default, or a dev override). */
+  activeSeed(): string {
+    return getActiveSeed();
+  }
+
+  /** Clear this device's reveals only. The draw is unchanged. */
   reset(): void {
+    localStorage.removeItem(REVEALS_KEY);
+    this.notify();
+  }
+
+  /** Dev: pick a fresh random seed (a new draw) and clear reveals. Local-only —
+   *  to make a draw live for everyone, bake its seed into sweepData.ts. */
+  reshuffle(): void {
+    setSeedOverride(generateSeed());
+    localStorage.removeItem(REVEALS_KEY);
+    this.notify();
+  }
+
+  /** Dev: drop the seed override, returning to the baked-in draw, and clear reveals. */
+  restoreDefaultDraw(): void {
+    clearSeedOverride();
     localStorage.removeItem(REVEALS_KEY);
     this.notify();
   }
@@ -52,7 +74,7 @@ export class LocalRepository implements SweepRepository {
 
   async listAssignments(): Promise<Assignment[]> {
     const reveals = loadReveals();
-    return BASE_ASSIGNMENTS.map((a) => {
+    return computeAssignments(getActiveSeed()).map((a) => {
       const rec = reveals[`${a.playerId}:${a.teamId}`];
       return rec ? { ...a, revealedAt: rec.revealedAt, revealedAuto: rec.revealedAuto } : a;
     });

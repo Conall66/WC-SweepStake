@@ -6,7 +6,10 @@ import type { Player, Assignment } from '../domain/types';
 import { SAMPLE_TEAMS } from './seedTeams';
 import { runDraw } from '../domain/draw';
 
-const SEED = 'worldcup2026';
+/** The seed baked into the deployed build — the draw every player sees. To
+ *  reshuffle for everyone, change this value and redeploy. Dev mode can preview
+ *  other seeds locally without touching this. */
+export const DEFAULT_SEED = 'worldcup2026-r2';
 
 export const PLAYERS: Player[] = [
   { id: 'conall-t',    name: 'Conall T',    descriptor: 'The Manager',           joinedAt: 1749340800000 },
@@ -27,4 +30,10 @@ export const PLAYERS: Player[] = [
   { id: 'tom-b',       name: 'Tom B',       descriptor: 'Big Daddy',             joinedAt: 1749340800000 },
 ];
 
-export const BASE_ASSIGNMENTS: Assignment[] = runDraw(SAMPLE_TEAMS, PLAYERS, SEED);
+/** The deterministic draw for a given seed — same teams, players and seed
+ *  always yield identical assignments. */
+export function computeAssignments(seed: string): Assignment[] {
+  return runDraw(SAMPLE_TEAMS, PLAYERS, seed);
+}
+
+export const BASE_ASSIGNMENTS: Assignment[] = computeAssignments(DEFAULT_SEED);
