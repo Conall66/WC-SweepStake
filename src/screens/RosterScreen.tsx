@@ -11,23 +11,17 @@ export function RosterScreen() {
     [assignments, players, teams],
   );
 
-  const anyRevealed = roster.some((entry) =>
-    entry.teams.some(({ assignment }) => assignment.revealedAt !== null),
-  );
-
   return (
     <>
       <span className="eyebrow gold">Everyone's draw</span>
       <h2 className="title">THE SQUADS</h2>
 
-      {!anyRevealed && (
-        <p className="placeholder" style={{ marginTop: 16 }}>
-          Teams appear here once a player has finished their reveal.
-        </p>
-      )}
-
       {roster.map((entry) => {
+        const isYou = entry.player.id === currentPlayerId;
         const allRevealed = entry.teams.every(({ assignment }) => assignment.revealedAt !== null);
+        // Everyone else's teams are always visible. Your own stay hidden until
+        // you've revealed them, so the Reveal tab keeps its surprise.
+        const hideOwn = isYou && !allRevealed;
         return (
           <div key={entry.player.id} style={{ marginBottom: 20 }}>
             <div
@@ -41,12 +35,19 @@ export function RosterScreen() {
             >
               <span>
                 {entry.player.name}
-                {entry.player.id === currentPlayerId ? ' · You' : ''}
+                {isYou ? ' · You' : ''}
               </span>
               <span style={{ opacity: 0.5 }}>{entry.player.descriptor}</span>
             </div>
 
-            {allRevealed ? (
+            {hideOwn ? (
+              <p
+                className="placeholder"
+                style={{ fontSize: 11, margin: '4px 0', opacity: 0.6 }}
+              >
+                Reveal your teams on the Reveal tab to see them here.
+              </p>
+            ) : (
               entry.teams.map(({ team, assignment }) => (
                 <div className="row" key={`${entry.player.id}-${team.id}`}>
                   <span className="fl">{flagEmoji(team.isoCode)}</span>
@@ -54,13 +55,6 @@ export function RosterScreen() {
                   <span className="bk">B{assignment.bucket}</span>
                 </div>
               ))
-            ) : (
-              <p
-                className="placeholder"
-                style={{ fontSize: 11, margin: '4px 0', opacity: 0.5 }}
-              >
-                Not revealed yet
-              </p>
             )}
           </div>
         );
