@@ -3,7 +3,6 @@ import { useApp } from '../state/AppContext';
 import { useReveal } from '../state/useReveal';
 import { WorldMap } from '../components/WorldMap';
 import { flagEmoji } from '../domain/flags';
-import { buildRoster } from '../domain/roster';
 import type { Team } from '../domain/types';
 
 export function RevealScreen() {
@@ -17,13 +16,6 @@ export function RevealScreen() {
     playerId: currentPlayerId,
     onReveal: revealTeams,
   });
-
-  // Full roster (every player's complete squad, revealed or not). Built once
-  // you've revealed all your own teams.
-  const roster = useMemo(
-    () => buildRoster(assignments, players, teams),
-    [assignments, players, teams],
-  );
 
   if (!currentPlayerId) {
     return (
@@ -100,28 +92,9 @@ export function RevealScreen() {
       )}
 
       {reveal.complete && (
-        <div className="feed">
-          <span className="eyebrow" style={{ color: 'var(--muted)' }}>
-            Full roster · everyone&apos;s teams
-          </span>
-          {roster.map((entry) => (
-            <div key={entry.player.id} style={{ marginTop: 10 }}>
-              <div className="mono sub" style={{ fontSize: 11, marginBottom: 4 }}>
-                {entry.player.name}
-                {entry.player.id === currentPlayerId ? ' · You' : ''}
-              </div>
-              {entry.teams.map(({ team, assignment }) => (
-                <div className="row" key={`${entry.player.id}-${team.id}`}>
-                  <span className="fl">{flagEmoji(team.isoCode)}</span>
-                  <span className="nm">{team.name}</span>
-                  <span className={`bk${assignment.revealedAuto ? ' auto' : ''}`}>
-                    {assignment.revealedAuto ? 'auto' : `B${assignment.bucket}`}
-                  </span>
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
+        <p className="placeholder" style={{ marginTop: 4 }}>
+          That&apos;s your squad. See everyone else&apos;s teams on the Everyone tab.
+        </p>
       )}
     </>
   );
