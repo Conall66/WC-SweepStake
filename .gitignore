@@ -8,3 +8,10 @@ dist-ssr
 # build output of the admin fetch script
 src/data/teams.json
 src/data/fixtures.json
+
+# TypeScript incremental build info
+*.tsbuildinfo
+
+# Firebase emulator debug logs
+firestore-debug.log
+firebase-debug.log

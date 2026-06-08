@@ -1,23 +1,14 @@
-import { planDraw } from '../domain/draw';
 import { useApp } from '../state/AppContext';
-import { Countdown } from '../components/Countdown';
 import type { TabKey } from '../components/TabBar';
 
-const FAIRNESS_STEPS = [
-  'Teams are ranked by the FIFA World Ranking — top seeds at the top, long shots at the bottom.',
-  'Ranked into buckets, then dealt one-per-bucket so everyone gets a fair spread.',
-  'A random seed is locked in before the draw — its fingerprint is published up front.',
-  'After the draw the seed is revealed, so anyone can re-run it and check. No organiser bias.',
-];
-
 export function HomeScreen({ onNavigate }: { onNavigate: (tab: TabKey) => void }) {
-  const { config, teams, players, potPence, commitment } = useApp();
-  if (!config) return null;
-
-  const plan = players.length > 0 ? planDraw(teams, players.length) : null;
-  const remainder = plan ? plan.unownedTeamIds.length : 0;
+  const { players, currentPlayerId, setCurrentPlayer, potPence } = useApp();
   const pounds = (potPence / 100).toFixed(0);
-  const seedHashShort = commitment ? `${commitment.seedHash.slice(0, 4)}…${commitment.seedHash.slice(-4)}` : 'published at the draw';
+
+  function handlePickPlayer(id: string) {
+    setCurrentPlayer(id);
+    onNavigate('reveal');
+  }
 
   return (
     <>
@@ -29,56 +20,68 @@ export function HomeScreen({ onNavigate }: { onNavigate: (tab: TabKey) => void }
           SWEEP
         </h1>
         <p className="sub" style={{ marginTop: 9 }}>
-          48 nations. One draw. Bragging rights until July 19th.
-        </p>
-        <Countdown deadline={config.joinDeadline} />
-        <p className="sub mono" style={{ fontSize: 10.5, marginTop: 9 }}>
-          ⏳ Joining closes Sun 7 June, 23:59
+          48 nations. 16 players. 3 teams each. Bragging rights until July 19th.
         </p>
       </div>
-
-      <div className="stat-row">
-        <div className="s">
-          <div className="n">{players.length}</div>
-          <div className="l">Players in</div>
-        </div>
-        <div className="s">
-          <div className="n">{plan ? plan.bucketCount : '—'}</div>
-          <div className="l">Teams each</div>
-        </div>
-        <div className="s">
-          <div className="n">£{pounds}</div>
-          <div className="l">In the pot</div>
-        </div>
-      </div>
-      <p className="sub" style={{ textAlign: 'center', marginTop: 10, fontSize: 11 }}>
-        £5 a head · pot settled between players <strong>outside the app</strong>
-        {remainder > 0 ? ` · ${remainder} teams sit out as the remainder` : ''}
-      </p>
 
       <div className="card">
-        <span className="eyebrow">🎲 How the draw stays fair</span>
+        <span className="eyebrow">How it works</span>
         <ol style={{ listStyle: 'none', marginTop: 10, display: 'grid', gap: 11 }}>
-          {FAIRNESS_STEPS.map((step, index) => (
-            <li key={step} style={{ display: 'flex', gap: 11 }}>
-              <span className="mono" style={{ color: 'var(--grass)' }}>
-                {index + 1}
-              </span>
-              <span className="sub">{step}</span>
-            </li>
-          ))}
+          <li style={{ display: 'flex', gap: 11 }}>
+            <span className="mono" style={{ color: 'var(--grass)' }}>1</span>
+            <span className="sub">
+              Teams are ranked by FIFA and split into 3 equal bands — top seeds, contenders,
+              and long shots. Everyone gets one from each band.
+            </span>
+          </li>
+          <li style={{ display: 'flex', gap: 11 }}>
+            <span className="mono" style={{ color: 'var(--grass)' }}>2</span>
+            <span className="sub">
+              Your 3 teams were assigned by a random draw. Tap your name below to reveal them —
+              weakest first, best saved for last.
+            </span>
+          </li>
+          <li style={{ display: 'flex', gap: 11 }}>
+            <span className="mono" style={{ color: 'var(--grass)' }}>3</span>
+            <span className="sub">
+              Each player has put in £5. Pot: <strong>£{pounds}</strong>. Settled between
+              players outside the app.
+            </span>
+          </li>
+          <li style={{ display: 'flex', gap: 11 }}>
+            <span className="mono" style={{ color: 'var(--gold, #d4a017)' }}>★</span>
+            <span className="sub">
+              <strong>Bonus prize:</strong> 20% of the pot goes to whoever has all their teams
+              knocked out first. Get eliminated early, get rewarded.
+            </span>
+          </li>
         </ol>
-        <p className="mono" style={{ fontSize: 10.5, color: 'var(--muted-2)', marginTop: 12 }}>
-          seed commitment → <span style={{ color: 'var(--grass)' }}>sha256: {seedHashShort}</span>
-        </p>
       </div>
 
-      <button type="button" className="btn" onClick={() => onNavigate('squad')}>
-        JOIN THE SWEEP →
-      </button>
-      <button type="button" className="btn ghost" onClick={() => onNavigate('reveal')}>
-        REVEAL MY TEAMS
-      </button>
+      <div className="card">
+        <span className="eyebrow">Tap your name to reveal your teams</span>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: 8,
+            marginTop: 12,
+          }}
+        >
+          {players.map((player) => (
+            <button
+              key={player.id}
+              type="button"
+              className={`btn${player.id === currentPlayerId ? ' gold' : ' ghost'}`}
+              style={{ fontSize: 13, padding: '10px 8px', textAlign: 'left' }}
+              onClick={() => handlePickPlayer(player.id)}
+            >
+              <div style={{ fontWeight: 700 }}>{player.name}</div>
+              <div style={{ fontSize: 10, opacity: 0.7, marginTop: 2 }}>{player.descriptor}</div>
+            </button>
+          ))}
+        </div>
+      </div>
     </>
   );
 }

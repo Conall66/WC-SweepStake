@@ -1,112 +1,72 @@
-// Development repository: holds state in memory and persists to localStorage so
-// a page refresh keeps the lobby and draw. Mirrors the async shape of the
-// eventual Firebase implementation, including a simple change subscription.
+// Local repository: serves the static players/teams/assignments and persists
+// only reveal timestamps to localStorage, so a refresh keeps which of your
+// teams you've already opened. Mirrors the async shape of an eventual backend.
 
-import type { Assignment, DrawCommitment, Fixture, Player, SweepConfig, Team } from '../domain/types';
+import type { Assignment, Player, SweepConfig, Team } from '../domain/types';
 import type { SweepRepository } from './repository';
-import { SEED_FIXTURES } from './seedFixtures';
 import { SAMPLE_TEAMS } from './seedTeams';
+import { PLAYERS, BASE_ASSIGNMENTS } from './sweepData';
 
-interface PersistedState {
-  players: Player[];
-  commitment: DrawCommitment | null;
-  assignments: Assignment[];
+const REVEALS_KEY = 'sweep:reveals:v1';
+
+interface RevealRecord {
+  revealedAt: number;
+  revealedAuto: boolean;
 }
 
-const DEFAULT_CONFIG: SweepConfig = {
-  contributionPence: 500, // £5
-  joinDeadline: new Date('2026-06-07T23:59:59Z').getTime(),
-};
-
-function loadState(key: string): PersistedState {
-  if (typeof localStorage === 'undefined') {
-    return { players: [], commitment: null, assignments: [] };
-  }
+function loadReveals(): Record<string, RevealRecord> {
   try {
-    const raw = localStorage.getItem(key);
-    if (raw) return JSON.parse(raw) as PersistedState;
+    return JSON.parse(localStorage.getItem(REVEALS_KEY) ?? '{}') as Record<string, RevealRecord>;
   } catch {
-    // Corrupt or unavailable storage — start fresh.
+    return {};
   }
-  return { players: [], commitment: null, assignments: [] };
+}
+
+function saveReveals(reveals: Record<string, RevealRecord>): void {
+  localStorage.setItem(REVEALS_KEY, JSON.stringify(reveals));
 }
 
 export class LocalRepository implements SweepRepository {
-  private readonly storageKey: string;
-  private state: PersistedState;
-
   private readonly listeners = new Set<() => void>();
 
-  constructor(sweepId: string) {
-    this.storageKey = `sweep:state:v1:${sweepId}`;
-    this.state = loadState(this.storageKey);
-  }
-
-  private persist(): void {
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(this.storageKey, JSON.stringify(this.state));
-    }
-    this.listeners.forEach((listener) => listener());
-  }
-
-  reset(): void {
-    this.state = { players: [], commitment: null, assignments: [] };
-    if (typeof localStorage !== 'undefined') {
-      localStorage.removeItem(this.storageKey);
-    }
+  private notify(): void {
     this.listeners.forEach((l) => l());
   }
 
+  reset(): void {
+    localStorage.removeItem(REVEALS_KEY);
+    this.notify();
+  }
+
   async getConfig(): Promise<SweepConfig> {
-    return DEFAULT_CONFIG;
+    return { contributionPence: 500 };
   }
 
   async listTeams(): Promise<Team[]> {
     return SAMPLE_TEAMS;
   }
 
-  async listFixtures(): Promise<Fixture[]> {
-    return SEED_FIXTURES;
-  }
-
   async listPlayers(): Promise<Player[]> {
-    return this.state.players;
-  }
-
-  async addPlayer(player: Omit<Player, 'id' | 'joinedAt'>): Promise<Player> {
-    const created: Player = { ...player, id: crypto.randomUUID(), joinedAt: Date.now() };
-    this.state.players = [...this.state.players, created];
-    this.persist();
-    return created;
-  }
-
-  async getCommitment(): Promise<DrawCommitment | null> {
-    return this.state.commitment;
-  }
-
-  async saveCommitment(commitment: DrawCommitment): Promise<void> {
-    this.state.commitment = commitment;
-    this.persist();
+    return PLAYERS;
   }
 
   async listAssignments(): Promise<Assignment[]> {
-    return this.state.assignments;
-  }
-
-  async saveAssignments(assignments: Assignment[]): Promise<void> {
-    this.state.assignments = assignments;
-    this.persist();
+    const reveals = loadReveals();
+    return BASE_ASSIGNMENTS.map((a) => {
+      const rec = reveals[`${a.playerId}:${a.teamId}`];
+      return rec ? { ...a, revealedAt: rec.revealedAt, revealedAuto: rec.revealedAuto } : a;
+    });
   }
 
   async markRevealed(playerId: string, teamIds: string[], auto: boolean): Promise<void> {
+    const reveals = loadReveals();
     const now = Date.now();
-    const teamIdSet = new Set(teamIds);
-    this.state.assignments = this.state.assignments.map((assignment) =>
-      assignment.playerId === playerId && teamIdSet.has(assignment.teamId)
-        ? { ...assignment, revealedAt: assignment.revealedAt ?? now, revealedAuto: auto }
-        : assignment,
-    );
-    this.persist();
+    for (const teamId of teamIds) {
+      const key = `${playerId}:${teamId}`;
+      if (!reveals[key]) reveals[key] = { revealedAt: now, revealedAuto: auto };
+    }
+    saveReveals(reveals);
+    this.notify();
   }
 
   subscribe(listener: () => void): () => void {

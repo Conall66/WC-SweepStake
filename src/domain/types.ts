@@ -64,6 +64,4 @@ export interface SweepConfig {
   /** Each player's stake in pence (500 = £5). The pot is informational only —
    *  no payments are processed or stored. */
   contributionPence: number;
-  /** Joining closes at this instant (epoch milliseconds). */
-  joinDeadline: number;
 }

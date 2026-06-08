@@ -3,10 +3,11 @@ import { useApp } from '../state/AppContext';
 import { useReveal } from '../state/useReveal';
 import { WorldMap } from '../components/WorldMap';
 import { flagEmoji } from '../domain/flags';
+import { buildRoster } from '../domain/roster';
 import type { Team } from '../domain/types';
 
 export function RevealScreen() {
-  const { teams, players, assignments, currentPlayerId, revealTeams, drawComplete } = useApp();
+  const { teams, players, assignments, currentPlayerId, revealTeams } = useApp();
 
   const teamById = useMemo(() => new Map(teams.map((team) => [team.id, team])), [teams]);
   const playerById = useMemo(() => new Map(players.map((player) => [player.id, player])), [players]);
@@ -18,7 +19,8 @@ export function RevealScreen() {
     onReveal: revealTeams,
   });
 
-  // Everyone else's revealed picks, most recent first.
+  // Everyone else's revealed picks, most recent first. Shown until you finish
+  // your own reveal, after which the full roster opens up.
   const othersRevealed = useMemo(
     () =>
       assignments
@@ -27,14 +29,20 @@ export function RevealScreen() {
     [assignments, currentPlayerId],
   );
 
-  if (!drawComplete) {
+  // Full roster (every player's complete squad, revealed or not). Built once
+  // you've revealed all your own teams.
+  const roster = useMemo(
+    () => buildRoster(assignments, players, teams),
+    [assignments, players, teams],
+  );
+
+  if (!currentPlayerId) {
     return (
       <>
         <span className="eyebrow gold">Your reveal</span>
         <h2 className="title">YOUR TEAMS</h2>
         <p className="placeholder">
-          The draw hasn&apos;t run yet. Once joining closes on 7 June and the draw is made, your teams
-          appear here to reveal — weakest bucket first.
+          Tap your name on the Home tab to get started.
         </p>
       </>
     );
@@ -63,14 +71,6 @@ export function RevealScreen() {
           const state = index < doneCount ? 'done' : index === doneCount && !reveal.complete ? 'cur' : '';
           return <div key={step.assignment.teamId} className={`seg ${state}`} />;
         })}
-      </div>
-
-      <div className="notice">
-        <span>⏱</span>
-        <p>
-          Haven&apos;t opened your teams before your first match? No problem — we&apos;ll{' '}
-          <strong>reveal them automatically</strong> so you&apos;re never behind on results.
-        </p>
       </div>
 
       <div className="map">
@@ -105,33 +105,58 @@ export function RevealScreen() {
           {reveal.spinning ? 'REVEALING…' : `REVEAL NEXT TEAM (${doneCount + 1} OF ${reveal.steps.length})`}
         </button>
       ) : (
-        <button type="button" className="btn gold" disabled>
-          ALL YOUR TEAMS REVEALED ✓
+        <button type="button" className="btn gold" onClick={reveal.replay}>
+          REVEAL AGAIN ↻
         </button>
       )}
 
-      <div className="feed">
-        <span className="eyebrow" style={{ color: 'var(--muted)' }}>
-          Others&apos; teams · as they reveal
-        </span>
-        {othersRevealed.length === 0 && <p className="placeholder">No one else has revealed yet.</p>}
-        {othersRevealed.map((assignment) => {
-          const team = teamById.get(assignment.teamId);
-          const player = playerById.get(assignment.playerId);
-          if (!team) return null;
-          return (
-            <div className="row" key={`${assignment.playerId}-${assignment.teamId}`}>
-              <span className="fl">{flagEmoji(team.isoCode)}</span>
-              <span className="nm">
-                {team.name} <em>· {player?.name ?? 'Player'}</em>
-              </span>
-              <span className={`bk${assignment.revealedAuto ? ' auto' : ''}`}>
-                {assignment.revealedAuto ? 'auto' : `B${assignment.bucket}`}
-              </span>
+      {reveal.complete ? (
+        <div className="feed">
+          <span className="eyebrow" style={{ color: 'var(--muted)' }}>
+            Full roster · everyone&apos;s teams
+          </span>
+          {roster.map((entry) => (
+            <div key={entry.player.id} style={{ marginTop: 10 }}>
+              <div className="mono sub" style={{ fontSize: 11, marginBottom: 4 }}>
+                {entry.player.name}
+                {entry.player.id === currentPlayerId ? ' · You' : ''}
+              </div>
+              {entry.teams.map(({ team, assignment }) => (
+                <div className="row" key={`${entry.player.id}-${team.id}`}>
+                  <span className="fl">{flagEmoji(team.isoCode)}</span>
+                  <span className="nm">{team.name}</span>
+                  <span className={`bk${assignment.revealedAuto ? ' auto' : ''}`}>
+                    {assignment.revealedAuto ? 'auto' : `B${assignment.bucket}`}
+                  </span>
+                </div>
+              ))}
             </div>
-          );
-        })}
-      </div>
+          ))}
+        </div>
+      ) : (
+        <div className="feed">
+          <span className="eyebrow" style={{ color: 'var(--muted)' }}>
+            Others&apos; teams · as they reveal
+          </span>
+          {othersRevealed.length === 0 && <p className="placeholder">No one else has revealed yet.</p>}
+          {othersRevealed.map((assignment) => {
+            const team = teamById.get(assignment.teamId);
+            const player = playerById.get(assignment.playerId);
+            if (!team) return null;
+            return (
+              <div className="row" key={`${assignment.playerId}-${assignment.teamId}`}>
+                <span className="fl">{flagEmoji(team.isoCode)}</span>
+                <span className="nm">
+                  {team.name} <em>· {player?.name ?? 'Player'}</em>
+                </span>
+                <span className={`bk${assignment.revealedAuto ? ' auto' : ''}`}>
+                  {assignment.revealedAuto ? 'auto' : `B${assignment.bucket}`}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </>
   );
 }

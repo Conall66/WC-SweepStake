@@ -91,5 +91,16 @@ export function useReveal({ assignments, teams, playerId, onReveal }: UseRevealA
     flash();
   }, [nextStep, onReveal, playerId, roam, spinning]);
 
-  return { steps, nextStep, cursor, complete, spinning, litCountry, settled, bucketLabel, spin };
+  // Replay the whole reveal from the start. Resets the local animation cursor
+  // only — reveals stay idempotent (revealedAt ?? now), so replaying never
+  // alters the stored revealedAt/revealedAuto for teams already opened.
+  const replay = useCallback(() => {
+    clearTimers();
+    setSpinning(false);
+    setSettled(null);
+    setLitCountry(null);
+    setCursor(0);
+  }, []);
+
+  return { steps, nextStep, cursor, complete, spinning, litCountry, settled, bucketLabel, spin, replay };
 }
