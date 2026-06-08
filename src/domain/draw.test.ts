@@ -83,6 +83,12 @@ describe('revealOrder', () => {
     const ordered = revealOrder(assignments, 'P1');
     expect(ordered.map((a) => a.bucket)).toEqual([4, 3, 2, 1]);
   });
+
+  it('scopes the reveal to only the requested player\'s teams', () => {
+    const assignments = runDraw(makeTeams(48), makePlayers(10), 'seed');
+    const ordered = revealOrder(assignments, 'P1');
+    expect(ordered.every((a) => a.playerId === 'P1')).toBe(true);
+  });
 });
 
 describe('commit–reveal fairness', () => {
