@@ -1,10 +1,8 @@
 import { useState } from 'react';
 import { TabBar, type TabKey } from './TabBar';
 import { HomeScreen } from '../screens/HomeScreen';
-import { SquadScreen } from '../screens/SquadScreen';
 import { RevealScreen } from '../screens/RevealScreen';
-import { FixturesScreen } from '../screens/FixturesScreen';
-import { StatsScreen } from '../screens/StatsScreen';
+import { RosterScreen } from '../screens/RosterScreen';
 import { useApp } from '../state/AppContext';
 
 export function AppShell() {
@@ -25,10 +23,8 @@ export function AppShell() {
     <div className="app">
       <main className="screen">
         {tab === 'home' && <HomeScreen onNavigate={setTab} />}
-        {tab === 'squad' && <SquadScreen />}
         {tab === 'reveal' && <RevealScreen />}
-        {tab === 'fixtures' && <FixturesScreen />}
-        {tab === 'stats' && <StatsScreen />}
+        {tab === 'roster' && <RosterScreen />}
       </main>
       <TabBar active={tab} onChange={setTab} />
     </div>
