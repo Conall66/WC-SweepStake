@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { TabBar, type TabKey } from './TabBar';
+import { DevPanel } from './DevPanel';
 import { HomeScreen } from '../screens/HomeScreen';
 import { RevealScreen } from '../screens/RevealScreen';
 import { RosterScreen } from '../screens/RosterScreen';
@@ -27,6 +28,7 @@ export function AppShell() {
         {tab === 'roster' && <RosterScreen />}
       </main>
       <TabBar active={tab} onChange={setTab} />
+      <DevPanel />
     </div>
   );
 }
