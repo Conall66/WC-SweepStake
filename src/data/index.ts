@@ -4,6 +4,6 @@
 import type { SweepRepository } from './repository';
 import { LocalRepository } from './localRepository';
 
-export function createRepository(sweepId: string): SweepRepository {
-  return new LocalRepository(sweepId);
+export function createRepository(): SweepRepository {
+  return new LocalRepository();
 }
