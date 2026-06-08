@@ -7,8 +7,9 @@ import type { SweepRepository } from './repository';
 import { SAMPLE_TEAMS } from './seedTeams';
 import { PLAYERS, computeAssignments } from './sweepData';
 import { clearSeedOverride, generateSeed, getActiveSeed, setSeedOverride } from './activeSeed';
+import { STORAGE_GENERATION } from './storage';
 
-const REVEALS_KEY = 'sweep:reveals:v1';
+const REVEALS_KEY = `sweep:reveals:${STORAGE_GENERATION}`;
 
 interface RevealRecord {
   revealedAt: number;

@@ -3,9 +3,10 @@
 // the resolution rule (including clearing a stale id) is unit-testable.
 
 import type { Player } from '../domain/types';
+import { STORAGE_GENERATION } from '../data/storage';
 
 export function seatStorageKey(sweepId: string): string {
-  return `sweep:me:v1:${sweepId}`;
+  return `sweep:me:${STORAGE_GENERATION}:${sweepId}`;
 }
 
 /** Returns the stored seat id only if it still matches a known player; null
