@@ -48,11 +48,10 @@ export function RosterScreen() {
                 Reveal your teams on the Reveal tab to see them here.
               </p>
             ) : (
-              entry.teams.map(({ team, assignment }) => (
+              entry.teams.map(({ team }) => (
                 <div className="row" key={`${entry.player.id}-${team.id}`}>
                   <span className="fl">{flagEmoji(team.isoCode)}</span>
                   <span className="nm">{team.name}</span>
-                  <span className="bk">B{assignment.bucket}</span>
                 </div>
               ))
             )}

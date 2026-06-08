@@ -76,7 +76,7 @@ export function RevealScreen() {
           <span className="fl">{flagEmoji(reveal.settled.team.isoCode)}</span>
           <div>
             <div className="t">{reveal.settled.team.name.toUpperCase()}</div>
-            <div className="d">yours · Bucket {reveal.settled.assignment.bucket}</div>
+            <div className="d">yours</div>
           </div>
         </div>
       )}
